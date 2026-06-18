@@ -40,7 +40,10 @@
 <div class="app">
   <header class="topbar">
     <div class="clock">{fmtTime(clock.now)}</div>
-    <div class="title">{views[selected]}</div>
+    <div class="title">
+      {#if settings.title.trim()}<span class="app-title">{settings.title}</span>{/if}
+      <span class="view-name">{views[selected]}</span>
+    </div>
     <div class="right">
       <StatusBar />
       <button class="icon" aria-label="Settings" onclick={() => (settingsOpen = true)}>⚙︎</button>
@@ -101,8 +104,19 @@
     letter-spacing: 0.5px;
   }
   .title {
-    font-size: 0.95rem;
-    color: var(--text-dim);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.15;
+  }
+  .app-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .view-name {
+    font-size: 0.62rem;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 2px;
   }

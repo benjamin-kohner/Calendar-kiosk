@@ -81,7 +81,7 @@ A family member walks past, glances, and instantly knows today's plan and whethe
 - **S7. Screensaver / dimming integration** that cooperates with Fully Kiosk (photo or clock screensaver when idle, wakes to calendar on motion/touch).
 - **S8. Date/time header & live clock** persistent across views.
 - **S9. Auto-return to "home" view** (e.g., Month/today) after N minutes of no interaction, so the wall display always resets to the most useful default.
-- **S10. Settings screen** (location for weather, time format, week start day, theme, calendar selection) reachable but out of the way.
+- **S10. Settings screen** reachable but out of the way — now includes: calendar title (§4.1 F3), auto/manual theme + day/night theme pickers (F1), device-location toggle + manual weather fallback (F2), events-on-grid toggle + max-per-day (F4), ribbon position, week start, units, and per-calendar show/hide. *(Implemented.)*
 
 ### COULD (v2 — differentiators / nice-to-have)
 - **C1. Lightweight event creation/quick-add** from the device.
@@ -90,7 +90,7 @@ A family member walks past, glances, and instantly knows today's plan and whethe
 - **C4. Meal planning** lane.
 - **C5. Photo screensaver from a shared album.**
 - **C6. Today/agenda "ribbon" enhancements** (next event countdown, "free until…").
-- **C7. Theming / light & dark auto-switch by time of day.**
+- **C7. Theming / light & dark auto-switch by time of day.** → **Promoted to MUST, see §4.1 F1 (implemented).**
 - **C8. Multi-account or non-Google calendar support (e.g., iCal/Outlook).**
 - **C9. Weather-driven smart hints** (e.g., "Rain at 3pm — bring an umbrella").
 
@@ -100,6 +100,22 @@ A family member walks past, glances, and instantly knows today's plan and whethe
 - **W3. Multi-tenant SaaS / accounts for strangers** — this is a personal/household deployment.
 - **W4. Video conferencing, smart-home dashboards, or general kiosk widgets** beyond calendar+weather.
 - **W5. Offline-first full functionality** — graceful stale display is enough; no full offline editing.
+- **W6. Premium "family hub" extras — cut by owner (2026-06-18):** photo/slideshow integration, chores, reward stars, to-dos/checklists, grocery/shopping lists, meal planning, AI event import, and voice control are **all out of scope**. This keeps the app permanently **read-only** on Google Calendar (no write scopes, no Google Tasks, no extra synced storage). Supersedes earlier COULD items C1–C5.
+
+---
+
+## 4.1 Owner Feedback — Locked Decisions (2026-06-18, v1.1)
+
+These refine the MoSCoW above and are **implemented in the MVP build**. Each is user-configurable per the owner's "have options for all these things" instruction.
+
+| # | Decision | Behavior | Setting |
+|---|----------|----------|---------|
+| **F1. Auto day/night theme** | Theme is **not** a single manual choice by default. The app **automatically uses a light theme during the day and a dark theme at night, switching at local sunrise/sunset** (sourced from the weather feed; falls back to fixed hours until weather loads). | Promotes old **C7** to **MUST**. Light themes: Paper, Daylight. Dark themes: Midnight, Graphite, Forest, Dusk. | "Auto day/night" vs "Manual"; separate **Day theme** + **Night theme** pickers; "Dim further at night" toggle. |
+| **F2. Location from device** | Weather location is taken from the **tablet's own geolocation** automatically — the user does not type coordinates. | Replaces manual-entry-first weather location. Persists last fix for offline. | "Use this device's location" toggle; manual lat/lon/label fields shown only when off. |
+| **F3. Custom app title** | The header shows a **configurable title** (e.g. "Ben & Kel's Calendar"), with the view name as a small sub-label. | New feature; default "Calendar". | Free-text "Calendar title" field. |
+| **F4. Events drawn on the month grid** | The Month grid cells show **actual events** (not just dots): up to N single-day events per cell as time+title lines, and **multi-day / all-day events as horizontal bars that span columns and wrap across week rows**. Density is accepted as a tradeoff on the small screen; overflow collapses to "+N more". The agenda ribbon still shows full detail for the selected day. | Enhances **M3**. Lane-stacking prevents overlapping bars from colliding. | "Show events on the calendar grid" toggle; "Max events per day" (2/3/4); ribbon position (right/bottom). |
+
+> Note on F1 vs. night-dimming: the in-app dark night theme is the primary night treatment; an optional extra dim layer is offered, and the tablet's Fully Kiosk backlight schedule (doc 06) remains the hardware-level complement.
 
 ---
 

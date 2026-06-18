@@ -1,10 +1,10 @@
 import './app.css';
 import { mount } from 'svelte';
 import App from './App.svelte';
-import { settings } from './lib/settings.svelte';
+import { themeController } from './lib/theme.svelte';
 
-// Apply persisted theme/night settings to <html> before first paint.
-settings.applyToDocument();
+// Apply the day/night theme to <html> before first paint.
+themeController.apply();
 
 const app = mount(App, { target: document.getElementById('app')! });
 

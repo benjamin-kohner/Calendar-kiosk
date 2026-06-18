@@ -53,6 +53,13 @@ html[data-theme='paper'] {
   --shadow: 0 6px 22px rgba(0,0,0,.10);
 }
 
+html[data-theme='daylight'] {
+  --bg: #eef2f7; --bg-elev: #ffffff; --bg-elev-2: #f4f7fb; --surface-line: #d7dee8;
+  --text: #1c2530; --text-dim: #5a6776; --text-faint: #97a3b2;
+  --accent: #2563eb; --accent-soft: rgba(37,99,235,.10); --today: #d97706;
+  --shadow: 0 6px 22px rgba(0,0,0,.10);
+}
+
 /* Night dimming — applied on top of any theme via data-night="on" */
 html[data-night='on'] {
   filter: brightness(0.55) saturate(0.9);

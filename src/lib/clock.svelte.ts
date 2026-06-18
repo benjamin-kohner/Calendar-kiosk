@@ -1,4 +1,4 @@
-import { settings } from './settings.svelte';
+import { themeController } from './theme.svelte';
 
 // A single shared heartbeat. Drives the live clock, midnight rollover, and
 // re-evaluates the night-dim window. Designed to run for months without drift:
@@ -18,7 +18,7 @@ class Clock {
     this.now = d;
     const key = toDayKey(d);
     if (key !== this.dayKey) this.dayKey = key; // midnight rollover
-    settings.applyToDocument(d); // re-check night dim window
+    themeController.apply(d); // re-check day/night theme + dim
   }
 }
 

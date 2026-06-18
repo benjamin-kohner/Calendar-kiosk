@@ -6,32 +6,41 @@ export interface WeatherLocation {
   label: string;
 }
 
-export interface NightWindow {
-  enabled: boolean;
-  startHour: number; // 0-23, dim begins
-  endHour: number; // 0-23, dim ends
-}
-
 interface PersistedSettings {
-  theme: string;
+  title: string;
+  themeMode: 'auto' | 'manual';
+  dayTheme: string;
+  nightTheme: string;
+  manualTheme: string;
+  nightDim: boolean;
   ribbonLayout: RibbonLayout;
   units: 'imperial' | 'metric';
   weekStartsMonday: boolean;
   hiddenCalendars: string[];
-  weather: WeatherLocation | null;
-  night: NightWindow;
+  useDeviceLocation: boolean;
+  weather: WeatherLocation | null; // manual override location
+  showEventsInGrid: boolean;
+  maxPerDay: number;
 }
 
 const STORAGE_KEY = 'kiosk.settings.v1';
+export const SETTINGS_EVENT = 'kiosk:settings';
 
 const DEFAULTS: PersistedSettings = {
-  theme: 'midnight',
+  title: 'Calendar',
+  themeMode: 'auto',
+  dayTheme: 'paper',
+  nightTheme: 'midnight',
+  manualTheme: 'midnight',
+  nightDim: true,
   ribbonLayout: 'right',
   units: 'imperial',
   weekStartsMonday: false,
   hiddenCalendars: [],
+  useDeviceLocation: true,
   weather: null,
-  night: { enabled: true, startHour: 22, endHour: 7 }
+  showEventsInGrid: true,
+  maxPerDay: 3
 };
 
 function load(): PersistedSettings {
@@ -45,46 +54,63 @@ function load(): PersistedSettings {
 }
 
 class Settings {
-  theme = $state(DEFAULTS.theme);
+  title = $state(DEFAULTS.title);
+  themeMode = $state<'auto' | 'manual'>(DEFAULTS.themeMode);
+  dayTheme = $state(DEFAULTS.dayTheme);
+  nightTheme = $state(DEFAULTS.nightTheme);
+  manualTheme = $state(DEFAULTS.manualTheme);
+  nightDim = $state(DEFAULTS.nightDim);
   ribbonLayout = $state<RibbonLayout>(DEFAULTS.ribbonLayout);
   units = $state<'imperial' | 'metric'>(DEFAULTS.units);
   weekStartsMonday = $state(DEFAULTS.weekStartsMonday);
   hiddenCalendars = $state<string[]>(DEFAULTS.hiddenCalendars);
+  useDeviceLocation = $state(DEFAULTS.useDeviceLocation);
   weather = $state<WeatherLocation | null>(DEFAULTS.weather);
-  night = $state<NightWindow>(DEFAULTS.night);
+  showEventsInGrid = $state(DEFAULTS.showEventsInGrid);
+  maxPerDay = $state(DEFAULTS.maxPerDay);
 
   constructor() {
     const s = load();
-    this.theme = s.theme;
+    this.title = s.title;
+    this.themeMode = s.themeMode;
+    this.dayTheme = s.dayTheme;
+    this.nightTheme = s.nightTheme;
+    this.manualTheme = s.manualTheme;
+    this.nightDim = s.nightDim;
     this.ribbonLayout = s.ribbonLayout;
     this.units = s.units;
     this.weekStartsMonday = s.weekStartsMonday;
     this.hiddenCalendars = s.hiddenCalendars;
+    this.useDeviceLocation = s.useDeviceLocation;
     this.weather = s.weather;
-    this.night = s.night;
+    this.showEventsInGrid = s.showEventsInGrid;
+    this.maxPerDay = s.maxPerDay;
   }
 
   save() {
     const data: PersistedSettings = {
-      theme: this.theme,
+      title: this.title,
+      themeMode: this.themeMode,
+      dayTheme: this.dayTheme,
+      nightTheme: this.nightTheme,
+      manualTheme: this.manualTheme,
+      nightDim: this.nightDim,
       ribbonLayout: this.ribbonLayout,
       units: this.units,
       weekStartsMonday: this.weekStartsMonday,
       hiddenCalendars: this.hiddenCalendars,
+      useDeviceLocation: this.useDeviceLocation,
       weather: this.weather,
-      night: this.night
+      showEventsInGrid: this.showEventsInGrid,
+      maxPerDay: this.maxPerDay
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
       /* storage full / disabled — non-fatal */
     }
-    this.applyToDocument();
-  }
-
-  setTheme(id: string) {
-    this.theme = id;
-    this.save();
+    // Let the theme controller re-evaluate (decoupled, avoids import cycle).
+    window.dispatchEvent(new Event(SETTINGS_EVENT));
   }
 
   toggleCalendar(id: string) {
@@ -92,20 +118,6 @@ class Settings {
       ? this.hiddenCalendars.filter((c) => c !== id)
       : [...this.hiddenCalendars, id];
     this.save();
-  }
-
-  isNightNow(now = new Date()): boolean {
-    if (!this.night.enabled) return false;
-    const h = now.getHours();
-    const { startHour, endHour } = this.night;
-    // window may wrap past midnight (e.g. 22 -> 7)
-    return startHour <= endHour ? h >= startHour && h < endHour : h >= startHour || h < endHour;
-  }
-
-  applyToDocument(now = new Date()) {
-    const html = document.documentElement;
-    html.setAttribute('data-theme', this.theme);
-    html.setAttribute('data-night', this.isNightNow(now) ? 'on' : 'off');
   }
 }
 

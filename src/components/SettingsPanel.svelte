@@ -1,16 +1,25 @@
 <script lang="ts">
   import { settings } from '../lib/settings.svelte';
   import { appData } from '../lib/data.svelte';
-  import { THEMES, RIBBON_LAYOUTS } from '../lib/themes';
+  import { THEMES, DARK_THEMES, LIGHT_THEMES, RIBBON_LAYOUTS } from '../lib/themes';
 
   let { onClose }: { onClose: () => void } = $props();
 
   const calendars = $derived(appData.calendar?.calendars ?? []);
 
-  // Local editable copy of the weather location.
   let lat = $state(String(settings.weather?.lat ?? ''));
   let lon = $state(String(settings.weather?.lon ?? ''));
   let label = $state(settings.weather?.label ?? '');
+
+  const geoText = $derived(
+    {
+      idle: 'Not requested yet',
+      locating: 'Locating…',
+      ok: 'Using device location ✓',
+      denied: 'Permission denied — using manual/default',
+      unavailable: 'Unavailable — using manual/default'
+    }[appData.geoStatus]
+  );
 
   function saveWeather() {
     const la = parseFloat(lat);
@@ -27,6 +36,13 @@
     settings.save();
     appData.refreshWeather();
   }
+
+  function toggleDeviceLocation(on: boolean) {
+    settings.useDeviceLocation = on;
+    settings.save();
+    if (on) appData.detectLocation();
+    else appData.refreshWeather();
+  }
 </script>
 
 <div class="backdrop" onclick={onClose} role="presentation"></div>
@@ -37,23 +53,107 @@
   </header>
 
   <section>
-    <h3>Theme</h3>
-    <div class="themes">
-      {#each THEMES as t (t.id)}
-        <button
-          class="swatch"
-          class:active={settings.theme === t.id}
-          style="background:{t.bg};color:{t.swatch}"
-          onclick={() => settings.setTheme(t.id)}
-        >
-          ● <span>{t.name}</span>
-        </button>
-      {/each}
-    </div>
+    <h3>Calendar title</h3>
+    <input
+      placeholder="e.g. Ben &amp; Kel's Calendar"
+      bind:value={settings.title}
+      onchange={() => settings.save()}
+    />
   </section>
 
   <section>
-    <h3>Month layout</h3>
+    <h3>Theme</h3>
+    <div class="seg">
+      <button
+        class:active={settings.themeMode === 'auto'}
+        onclick={() => {
+          settings.themeMode = 'auto';
+          settings.save();
+        }}>Auto day / night</button>
+      <button
+        class:active={settings.themeMode === 'manual'}
+        onclick={() => {
+          settings.themeMode = 'manual';
+          settings.save();
+        }}>Manual</button>
+    </div>
+
+    {#if settings.themeMode === 'auto'}
+      <p class="hint">Switches automatically at local sunrise &amp; sunset.</p>
+      <h4>Day theme</h4>
+      <div class="themes">
+        {#each LIGHT_THEMES as t (t.id)}
+          <button
+            class="swatch"
+            class:active={settings.dayTheme === t.id}
+            style="background:{t.bg};color:{t.swatch}"
+            onclick={() => {
+              settings.dayTheme = t.id;
+              settings.save();
+            }}>● <span>{t.name}</span></button>
+        {/each}
+      </div>
+      <h4>Night theme</h4>
+      <div class="themes">
+        {#each DARK_THEMES as t (t.id)}
+          <button
+            class="swatch"
+            class:active={settings.nightTheme === t.id}
+            style="background:{t.bg};color:{t.swatch}"
+            onclick={() => {
+              settings.nightTheme = t.id;
+              settings.save();
+            }}>● <span>{t.name}</span></button>
+        {/each}
+      </div>
+      <label class="row">
+        <input
+          type="checkbox"
+          bind:checked={settings.nightDim}
+          onchange={() => settings.save()}
+        /> Dim screen further at night
+      </label>
+    {:else}
+      <div class="themes">
+        {#each THEMES as t (t.id)}
+          <button
+            class="swatch"
+            class:active={settings.manualTheme === t.id}
+            style="background:{t.bg};color:{t.swatch}"
+            onclick={() => {
+              settings.manualTheme = t.id;
+              settings.save();
+            }}>● <span>{t.name}</span></button>
+        {/each}
+      </div>
+    {/if}
+  </section>
+
+  <section>
+    <h3>Month view</h3>
+    <label class="row">
+      <input
+        type="checkbox"
+        bind:checked={settings.showEventsInGrid}
+        onchange={() => settings.save()}
+      /> Show events on the calendar grid
+    </label>
+    {#if settings.showEventsInGrid}
+      <div class="sub">
+        <span>Max events per day</span>
+        <div class="seg small">
+          {#each [2, 3, 4] as n (n)}
+            <button
+              class:active={settings.maxPerDay === n}
+              onclick={() => {
+                settings.maxPerDay = n;
+                settings.save();
+              }}>{n}</button>
+          {/each}
+        </div>
+      </div>
+    {/if}
+    <h4>Agenda ribbon</h4>
     <div class="seg">
       {#each RIBBON_LAYOUTS as l (l.id)}
         <button
@@ -69,16 +169,28 @@
   <section>
     <h3>Week starts</h3>
     <div class="seg">
-      <button class:active={!settings.weekStartsMonday} onclick={() => { settings.weekStartsMonday = false; settings.save(); }}>Sunday</button>
-      <button class:active={settings.weekStartsMonday} onclick={() => { settings.weekStartsMonday = true; settings.save(); }}>Monday</button>
+      <button
+        class:active={!settings.weekStartsMonday}
+        onclick={() => {
+          settings.weekStartsMonday = false;
+          settings.save();
+        }}>Sunday</button>
+      <button
+        class:active={settings.weekStartsMonday}
+        onclick={() => {
+          settings.weekStartsMonday = true;
+          settings.save();
+        }}>Monday</button>
     </div>
   </section>
 
   <section>
     <h3>Units</h3>
     <div class="seg">
-      <button class:active={settings.units === 'imperial'} onclick={() => setUnits('imperial')}>°F / mph</button>
-      <button class:active={settings.units === 'metric'} onclick={() => setUnits('metric')}>°C / km/h</button>
+      <button class:active={settings.units === 'imperial'} onclick={() => setUnits('imperial')}
+        >°F / mph</button>
+      <button class:active={settings.units === 'metric'} onclick={() => setUnits('metric')}
+        >°C / km/h</button>
     </div>
   </section>
 
@@ -103,25 +215,22 @@
 
   <section>
     <h3>Weather location</h3>
-    <div class="loc-fields">
-      <input placeholder="Latitude" bind:value={lat} inputmode="decimal" />
-      <input placeholder="Longitude" bind:value={lon} inputmode="decimal" />
-      <input placeholder="Label (e.g. Home)" bind:value={label} />
-      <button class="save" onclick={saveWeather}>Save location</button>
-    </div>
-  </section>
-
-  <section>
-    <h3>Night dimming</h3>
     <label class="row">
-      <input type="checkbox" bind:checked={settings.night.enabled} onchange={() => settings.save()} />
-      Dim screen at night
+      <input
+        type="checkbox"
+        bind:checked={settings.useDeviceLocation}
+        onchange={(e) => toggleDeviceLocation(e.currentTarget.checked)}
+      /> Use this device's location
     </label>
-    <div class="night-hours" class:disabled={!settings.night.enabled}>
-      <label>From <input type="number" min="0" max="23" bind:value={settings.night.startHour} onchange={() => settings.save()} />:00</label>
-      <label>To <input type="number" min="0" max="23" bind:value={settings.night.endHour} onchange={() => settings.save()} />:00</label>
-    </div>
-    <p class="hint">Tip: on the tablet, Fully Kiosk Browser can also dim the backlight on a schedule.</p>
+    <p class="hint">{geoText}</p>
+    {#if !settings.useDeviceLocation}
+      <div class="loc-fields">
+        <input placeholder="Latitude" bind:value={lat} inputmode="decimal" />
+        <input placeholder="Longitude" bind:value={lon} inputmode="decimal" />
+        <input placeholder="Label (e.g. Home)" bind:value={label} />
+        <button class="save" onclick={saveWeather}>Save location</button>
+      </div>
+    {/if}
   </section>
 </div>
 
@@ -169,6 +278,12 @@
     letter-spacing: 1.5px;
     color: var(--text-faint);
   }
+  h4 {
+    margin: 12px 0 6px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
   .themes {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -202,10 +317,22 @@
     color: var(--text-dim);
     font-size: 0.85rem;
   }
+  .seg.small button {
+    padding: 6px 12px;
+    flex: 0 0 auto;
+  }
   .seg button.active {
     background: var(--accent-soft);
     color: var(--accent);
     font-weight: 600;
+  }
+  .sub {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px 0 2px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
   }
   .cals {
     display: flex;
@@ -246,6 +373,7 @@
     display: flex;
     flex-direction: column;
     gap: 7px;
+    margin-top: 8px;
   }
   input {
     background: var(--bg-elev-2);
@@ -255,6 +383,10 @@
     padding: 9px 10px;
     font-size: 0.9rem;
     font-family: inherit;
+    width: 100%;
+  }
+  input[type='checkbox'] {
+    width: auto;
   }
   .save {
     background: var(--accent-soft);
@@ -268,26 +400,11 @@
     align-items: center;
     gap: 10px;
     font-size: 0.9rem;
-  }
-  .night-hours {
-    display: flex;
-    gap: 16px;
     margin-top: 10px;
-    font-size: 0.85rem;
-    color: var(--text-dim);
-  }
-  .night-hours.disabled {
-    opacity: 0.4;
-    pointer-events: none;
-  }
-  .night-hours input {
-    width: 3.2em;
-    padding: 5px;
-    text-align: center;
   }
   .hint {
     font-size: 0.72rem;
     color: var(--text-faint);
-    margin: 10px 0 0;
+    margin: 8px 0 0;
   }
 </style>
