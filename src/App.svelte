@@ -14,12 +14,24 @@
   import StatusBar from './components/StatusBar.svelte';
   import SettingsPanel from './components/SettingsPanel.svelte';
   import AuthBanner from './components/AuthBanner.svelte';
+  import EventDetail from './components/EventDetail.svelte';
+  import { ui } from './lib/ui.svelte';
+  import { idle } from './lib/idle.svelte';
 
   let api = $state<EmblaCarouselType | null>(null);
   let selected = $state(0);
   let settingsOpen = $state(false);
 
   const views = ['Month', 'Week', 'Weather'];
+
+  // After inactivity, return to the Month view and dismiss any open overlays.
+  $effect(() => {
+    if (idle.resetToken > 0) {
+      api?.scrollTo(0);
+      settingsOpen = false;
+      ui.close();
+    }
+  });
 
   // Visible (non-hidden) events for the calendar views.
   const visibleEvents = $derived<CalEvent[]>(
@@ -82,6 +94,8 @@
   <SettingsPanel onClose={() => (settingsOpen = false)} />
 {/if}
 
+<EventDetail />
+
 <style>
   .app {
     display: flex;
@@ -108,11 +122,17 @@
     flex-direction: column;
     align-items: center;
     line-height: 1.15;
+    min-width: 0;
+    padding: 0 8px;
   }
   .app-title {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 600;
     color: var(--text);
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .view-name {
     font-size: 0.62rem;

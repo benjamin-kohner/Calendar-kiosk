@@ -44,6 +44,12 @@ export function monthGrid(d: Date, weekStartsMonday: boolean): Date[] {
   return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
 }
 
+/** N weeks (N*7 dates) starting at the week containing `anchor`. */
+export function rollingGrid(anchor: Date, weeks: number, weekStartsMonday: boolean): Date[] {
+  const start = startOfWeek(anchor, weekStartsMonday);
+  return Array.from({ length: weeks * 7 }, (_, i) => addDays(start, i));
+}
+
 export function weekdayLabels(weekStartsMonday: boolean): string[] {
   const base = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   return weekStartsMonday ? [...base.slice(1), base[0]] : base;
@@ -86,6 +92,18 @@ const f = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(undefine
 
 export const fmtTime = (d: Date) => f({ hour: 'numeric', minute: '2-digit' }).format(d);
 export const fmtMonthYear = (d: Date) => f({ month: 'long', year: 'numeric' }).format(d);
+
+/** "June 2026" or "Jun – Jul 2026" for a date window spanning two months. */
+export function fmtMonthRange(first: Date, last: Date): string {
+  if (first.getFullYear() === last.getFullYear() && first.getMonth() === last.getMonth()) {
+    return fmtMonthYear(first);
+  }
+  const m = (d: Date) => f({ month: 'short' }).format(d);
+  if (first.getFullYear() === last.getFullYear()) {
+    return `${m(first)} – ${m(last)} ${last.getFullYear()}`;
+  }
+  return `${m(first)} ${first.getFullYear()} – ${m(last)} ${last.getFullYear()}`;
+}
 export const fmtWeekday = (d: Date) => f({ weekday: 'short' }).format(d);
 export const fmtWeekdayLong = (d: Date) => f({ weekday: 'long' }).format(d);
 export const fmtDayMonth = (d: Date) => f({ day: 'numeric', month: 'short' }).format(d);

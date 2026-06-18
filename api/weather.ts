@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,relative_humidity_2m` +
     `&hourly=temperature_2m,weather_code,precipitation_probability` +
-    `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset` +
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max` +
     `&timezone=auto&forecast_days=7&temperature_unit=${tempUnit}&wind_speed_unit=${windUnit}`;
 
   try {
@@ -39,7 +39,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       code: d.daily.weather_code[i],
       precipProb: d.daily.precipitation_probability_max?.[i] ?? 0,
       sunrise: d.daily.sunrise?.[i] ?? '',
-      sunset: d.daily.sunset?.[i] ?? ''
+      sunset: d.daily.sunset?.[i] ?? '',
+      uvMax: d.daily.uv_index_max?.[i] ?? 0
     }));
 
     res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=1800');

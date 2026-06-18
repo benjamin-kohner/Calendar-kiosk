@@ -89,11 +89,13 @@ export async function listCalendars(token: string): Promise<CalendarMeta[]> {
 export interface CalEvent {
   id: string;
   calendarId: string;
+  calendarName?: string;
   title: string;
   start: string;
   end: string;
   allDay: boolean;
   location?: string;
+  description?: string;
   color: string;
 }
 
@@ -101,6 +103,7 @@ interface GEvent {
   id: string;
   summary?: string;
   location?: string;
+  description?: string;
   status?: string;
   start?: { date?: string; dateTime?: string };
   end?: { date?: string; dateTime?: string };
@@ -136,11 +139,13 @@ export async function listEvents(
       out.push({
         id: `${cal.id}::${e.id}`,
         calendarId: cal.id,
+        calendarName: cal.summary,
         title: e.summary ?? '',
         start: e.start.dateTime ?? e.start.date ?? '',
         end: e.end?.dateTime ?? e.end?.date ?? e.start.dateTime ?? e.start.date ?? '',
         allDay,
         location: e.location,
+        description: e.description,
         color: cal.color
       });
     }

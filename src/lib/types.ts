@@ -12,7 +12,9 @@ export interface CalEvent {
   end: string; // RFC3339 / ISO
   allDay: boolean;
   location?: string;
+  description?: string;
   color: string;
+  calendarName?: string;
 }
 
 export interface CalendarPayload {
@@ -46,6 +48,7 @@ export interface WeatherDay {
   precipProb: number;
   sunrise: string;
   sunset: string;
+  uvMax: number;
 }
 
 export interface WeatherPayload {

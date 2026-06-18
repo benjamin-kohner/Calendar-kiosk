@@ -38,6 +38,8 @@ class AppData {
     readCache<{ lat: number; lon: number }>(GEO_CACHE)
   );
   geoStatus = $state<'idle' | 'locating' | 'ok' | 'denied' | 'unavailable'>('idle');
+  private calRetry = 0;
+  private calTimer: ReturnType<typeof setTimeout> | null = null;
 
   start() {
     // Seed the theme controller from cached weather so first paint is correct.
@@ -100,10 +102,24 @@ class AppData {
       this.lastCalSync = Date.parse(data.syncedAt);
       this.calStatus = 'ok';
       this.authNeeded = false;
+      this.calRetry = 0;
+      if (this.calTimer) {
+        clearTimeout(this.calTimer);
+        this.calTimer = null;
+      }
       writeCache(CAL_CACHE, data);
     } catch {
-      // Keep last-known data on screen; mark stale/offline.
+      // Keep last-known data on screen; mark stale/offline, then retry with
+      // exponential backoff (faster recovery than waiting the full poll).
       this.calStatus = this.calendar ? (navigator.onLine ? 'stale' : 'offline') : 'offline';
+      if (!this.calTimer) {
+        const delay = Math.min(60_000, 5_000 * 2 ** this.calRetry);
+        this.calRetry++;
+        this.calTimer = setTimeout(() => {
+          this.calTimer = null;
+          this.refreshCalendar();
+        }, delay);
+      }
     }
   }
 

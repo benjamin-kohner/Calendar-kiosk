@@ -2,6 +2,8 @@
   import type { CalEvent } from '../lib/types';
   import { settings } from '../lib/settings.svelte';
   import { clock } from '../lib/clock.svelte';
+  import { idle } from '../lib/idle.svelte';
+  import { ui } from '../lib/ui.svelte';
   import {
     startOfWeek,
     addDays,
@@ -20,6 +22,11 @@
   // Follow date rollover when viewing the current week.
   $effect(() => {
     void clock.dayKey;
+  });
+
+  // Return to the current week after inactivity.
+  $effect(() => {
+    if (idle.resetToken > 0) offset = 0;
   });
 
   const days = $derived.by(() => {
@@ -48,10 +55,10 @@
         </div>
         <div class="scroll evs">
           {#each evs as ev (ev.id)}
-            <div class="chip" style="border-left-color:{ev.color}">
+            <button class="chip" style="border-left-color:{ev.color}" onclick={() => ui.openEvent(ev)}>
               <span class="ct">{ev.title || '(no title)'}</span>
               <span class="cm">{fmtEventTime(ev)}</span>
-            </div>
+            </button>
           {:else}
             <span class="none">·</span>
           {/each}
@@ -147,11 +154,17 @@
     gap: 4px;
   }
   .chip {
+    display: block;
+    width: 100%;
+    text-align: left;
     background: var(--bg-elev-2);
     border-left: 3px solid var(--accent);
     border-radius: 4px;
     padding: 3px 4px;
     overflow: hidden;
+  }
+  .chip:active {
+    filter: brightness(1.15);
   }
   .ct {
     display: block;
