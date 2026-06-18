@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { redirectUri, SCOPE } from '../_google';
+import { redirectUri, SCOPE } from '../_google.js';
 
 // Kicks off the one-time Google authorization. access_type=offline +
 // prompt=consent guarantees Google returns a long-lived refresh token.

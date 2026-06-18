@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAccessToken, listCalendars, listEvents, AuthError, type CalEvent } from './_google';
+import { getAccessToken, listCalendars, listEvents, AuthError, type CalEvent } from './_google.js';
 
 // Rolling window: 1 month back, ~3.5 months forward (covers the 3-month requirement).
 const BACK_DAYS = 31;

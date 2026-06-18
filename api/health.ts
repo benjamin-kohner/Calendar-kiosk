@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAccessToken, AuthError } from './_google';
+import { getAccessToken, AuthError } from './_google.js';
 
 // Lightweight health/heartbeat endpoint. Point an uptime monitor at this.
 export default async function handler(_req: VercelRequest, res: VercelResponse) {

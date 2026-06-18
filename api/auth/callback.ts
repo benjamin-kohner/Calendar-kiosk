@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { exchangeCode, redirectUri } from '../_google';
+import { exchangeCode, redirectUri } from '../_google.js';
 
 // Google redirects here with ?code=... We exchange it for a refresh token and
 // show it once so the owner can paste it into the GOOGLE_REFRESH_TOKEN env var.
