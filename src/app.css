@@ -1,0 +1,90 @@
+/* ============================================================
+   Calendar Kiosk — global styles + theme system
+   Themes switch via <html data-theme="..."> (see src/lib/themes.ts).
+   Everything reads from CSS variables so custom theming is trivial.
+   ============================================================ */
+
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Default (midnight) palette — overridden per data-theme below */
+  --bg: #0d1117;
+  --bg-elev: #161b22;
+  --bg-elev-2: #1c2330;
+  --surface-line: #283040;
+  --text: #e6edf3;
+  --text-dim: #9aa7b5;
+  --text-faint: #5f6b7a;
+  --accent: #58a6ff;
+  --accent-soft: rgba(88, 166, 255, 0.16);
+  --today: #f0a500;
+  --danger: #f85149;
+  --good: #3fb950;
+  --shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+/* ---- Themes ---- */
+html[data-theme='midnight'] {
+  --bg: #0d1117; --bg-elev: #161b22; --bg-elev-2: #1c2330; --surface-line: #283040;
+  --text: #e6edf3; --text-dim: #9aa7b5; --text-faint: #5f6b7a;
+  --accent: #58a6ff; --accent-soft: rgba(88,166,255,.16); --today: #f0a500;
+}
+html[data-theme='graphite'] {
+  --bg: #1a1a1d; --bg-elev: #242428; --bg-elev-2: #2d2d33; --surface-line: #3a3a42;
+  --text: #f2f2f4; --text-dim: #a9a9b3; --text-faint: #6c6c78;
+  --accent: #d4a373; --accent-soft: rgba(212,163,115,.18); --today: #e9c46a;
+}
+html[data-theme='forest'] {
+  --bg: #0c1410; --bg-elev: #13201a; --bg-elev-2: #1a2c23; --surface-line: #284035;
+  --text: #e8f1ea; --text-dim: #9fb6a8; --text-faint: #61786b;
+  --accent: #4ade80; --accent-soft: rgba(74,222,128,.16); --today: #fbbf24;
+}
+html[data-theme='dusk'] {
+  --bg: #14101f; --bg-elev: #1d1830; --bg-elev-2: #261f3e; --surface-line: #382e54;
+  --text: #ece6f5; --text-dim: #b1a6c6; --text-faint: #6f6587;
+  --accent: #b794f6; --accent-soft: rgba(183,148,246,.18); --today: #f6ad55;
+}
+html[data-theme='paper'] {
+  --bg: #f5f2eb; --bg-elev: #ffffff; --bg-elev-2: #faf8f3; --surface-line: #e3ddd1;
+  --text: #2b2a27; --text-dim: #6b675e; --text-faint: #a39d90;
+  --accent: #c2410c; --accent-soft: rgba(194,65,12,.10); --today: #b45309;
+  --shadow: 0 6px 22px rgba(0,0,0,.10);
+}
+
+/* Night dimming — applied on top of any theme via data-night="on" */
+html[data-night='on'] {
+  filter: brightness(0.55) saturate(0.9);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
+  overscroll-behavior: none;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Thin, subtle scrollbars for the agenda/week scroll areas */
+.scroll { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.scroll::-webkit-scrollbar { width: 6px; }
+.scroll::-webkit-scrollbar-thumb { background: var(--surface-line); border-radius: 3px; }
