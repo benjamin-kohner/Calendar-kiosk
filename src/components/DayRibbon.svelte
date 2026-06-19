@@ -1,6 +1,13 @@
 <script lang="ts">
   import type { CalEvent } from '../lib/types';
-  import { fmtFullDate, fmtEventTime, fmtTime, isToday, eventStartDate } from '../lib/date';
+  import {
+    fmtFullDate,
+    fmtTime,
+    isToday,
+    sameDay,
+    eventStartDate,
+    eventEndDate
+  } from '../lib/date';
   import { clock } from '../lib/clock.svelte';
   import { ui } from '../lib/ui.svelte';
 
@@ -15,6 +22,26 @@
       .sort((a, b) => eventStartDate(a).getTime() - eventStartDate(b).getTime());
     return future[0] ?? null;
   });
+
+  function timeRange(ev: CalEvent): string {
+    if (ev.allDay) return 'All day';
+    const s = eventStartDate(ev);
+    const e = eventEndDate(ev);
+    return `${fmtTime(s)} – ${fmtTime(e)}`;
+  }
+
+  // First ~120 chars of the description, with HTML stripped and whitespace
+  // collapsed (Google descriptions can contain markup).
+  function descSnippet(ev: CalEvent): string | null {
+    if (!ev.description) return null;
+    const text = ev.description
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!text) return null;
+    return text.length > 120 ? text.slice(0, 120).trimEnd() + '…' : text;
+  }
 </script>
 
 <aside class="ribbon">
@@ -43,7 +70,13 @@
           <span class="bar" style="background:{ev.color}"></span>
           <span class="body">
             <span class="t">{ev.title || '(no title)'}</span>
-            <span class="meta">{fmtEventTime(ev)}{#if ev.location}{' · '}{ev.location}{/if}</span>
+            <span class="time">{timeRange(ev)}</span>
+            {#if ev.location}
+              <span class="loc"><span class="ic">📍</span>{ev.location}</span>
+            {/if}
+            {#if descSnippet(ev)}
+              <span class="desc">{descSnippet(ev)}</span>
+            {/if}
           </span>
         </button>
       {/each}
@@ -112,8 +145,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-top: 8px;
+    margin-top: 6px;
   }
   .empty {
     color: var(--text-faint);
@@ -122,39 +154,69 @@
   }
   .item {
     display: flex;
-    gap: 9px;
-    align-items: stretch;
+    gap: 10px;
+    align-items: flex-start;
     text-align: left;
-    padding: 2px;
+    padding: 10px 2px;
     border-radius: 6px;
+  }
+  .item:not(:last-child) {
+    border-bottom: 1px solid var(--surface-line);
   }
   .item:active {
     background: var(--bg-elev-2);
   }
   .bar {
     width: 4px;
+    align-self: stretch;
     border-radius: 2px;
     flex: 0 0 auto;
+    min-height: 2.4em;
   }
   .body {
     min-width: 0;
     display: flex;
     flex-direction: column;
+    gap: 3px;
   }
   .t {
-    font-size: 0.98rem;
+    font-size: 1rem;
     font-weight: 600;
-    line-height: 1.2;
+    line-height: 1.25;
+    /* full title, wrapping up to two lines before truncating */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
-  .meta {
-    font-size: 0.8rem;
+  .time {
+    font-size: 0.82rem;
     color: var(--text-dim);
-    margin-top: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .loc {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  }
+  .loc .ic {
+    margin-right: 3px;
+    font-size: 0.75rem;
+  }
+  .desc {
+    font-size: 0.8rem;
+    color: var(--text-faint);
+    line-height: 1.4;
+    margin-top: 1px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 </style>

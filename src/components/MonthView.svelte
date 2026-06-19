@@ -187,7 +187,7 @@
 <style>
   .month {
     display: grid;
-    grid-template-columns: 1fr 250px;
+    grid-template-columns: 1fr 272px;
     height: 100%;
     gap: 10px;
     padding: 0 12px 8px;
