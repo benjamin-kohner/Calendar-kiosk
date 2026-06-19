@@ -107,13 +107,12 @@
     top: 0;
     z-index: 1;
     background: var(--bg-elev);
-    font-size: 0.74rem;
+    font-size: 1.18rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-faint);
-    padding: 10px 2px 5px;
-    border-bottom: 1px solid var(--surface-line);
+    letter-spacing: -0.01em;
+    color: var(--text);
+    padding: 14px 2px 7px;
+    border-bottom: 2px solid var(--surface-line);
   }
   .day-label.today {
     color: var(--accent);
