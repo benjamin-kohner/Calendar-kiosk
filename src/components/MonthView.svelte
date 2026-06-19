@@ -11,12 +11,9 @@
     dayKey,
     isToday,
     sameDay,
-    startOfDay,
     addDays,
     eventsForDay,
-    fmtMonthRange,
-    fmtTimeShort,
-    eventStartDate
+    fmtMonthRange
   } from '../lib/date';
   import { layoutWeek, type WeekLayout } from '../lib/monthLayout';
   import DayRibbon from './DayRibbon.svelte';
@@ -24,11 +21,11 @@
   let { events }: { events: CalEvent[] } = $props();
 
   const WEEKS = 4; // current week + next 3
-  const MAX_LANES = 4; // spanning-bar rows per week (more vertical room now)
+  const MAX_LANES = 4; // spanning-bar rows per week
 
   let offsetWeeks = $state(0);
   let selected = $state(new Date());
-  let following = $state(true); // tracking "today" / default window?
+  let following = $state(true);
 
   function resetToToday() {
     offsetWeeks = 0;
@@ -36,13 +33,11 @@
     following = true;
   }
 
-  // Roll over to the new day automatically if we were following.
   $effect(() => {
     void clock.dayKey;
     if (following && !sameDay(selected, new Date())) resetToToday();
   });
 
-  // Return to today's default after a period of inactivity (stray-tap recovery).
   $effect(() => {
     void idle.resetToken;
     if (idle.resetToken > 0) resetToToday();
@@ -77,10 +72,6 @@
   });
 
   const rangeLabel = $derived(fmtMonthRange(grid[0], grid[grid.length - 1]));
-  const todayStart = $derived.by(() => {
-    void clock.dayKey;
-    return startOfDay(new Date()).getTime();
-  });
 
   function dotColors(day: Date): string[] {
     return eventsForDay(events, day)
@@ -125,25 +116,24 @@
           {#if wk.layout}
             <div class="bars">
               {#each wk.layout.bars.filter((b) => b.lane < MAX_LANES) as bar (bar.ev.id)}
-                <div
+                <button
                   class="bar"
                   class:cl={bar.continuesLeft}
                   class:cr={bar.continuesRight}
                   style="grid-column:{bar.colStart + 1} / span {bar.colSpan}; grid-row:{bar.lane +
                     1}; background:{bar.ev.color}; color:{textOn(bar.ev.color)}"
+                  onclick={(e) => openEvent(e, bar.ev)}
                 >
                   {bar.showTitle ? bar.ev.title || '(no title)' : ''}
-                </div>
+                </button>
               {/each}
             </div>
           {/if}
 
           <div class="daygrid">
             {#each wk.days as day, i (dayKey(day))}
-              {@const past = startOfDay(day).getTime() < todayStart}
               <div
                 class="cell"
-                class:past
                 class:today={isToday(day)}
                 class:sel={sameDay(day, selected)}
                 role="button"
@@ -157,14 +147,16 @@
                 {#if wk.layout}
                   <span class="singles">
                     {#each wk.layout.singles[i].slice(0, settings.maxPerDay) as ev (ev.id)}
-                      <button class="ev" onclick={(e) => openEvent(e, ev)}>
-                        <i style="background:{ev.color}"></i>
-                        <b>{fmtTimeShort(eventStartDate(ev))}</b>
-                        <span class="evt">{ev.title || '(no title)'}</span>
+                      <button
+                        class="ev"
+                        style="background:{ev.color}; color:{textOn(ev.color)}"
+                        onclick={(e) => openEvent(e, ev)}
+                      >
+                        {ev.title || '(no title)'}
                       </button>
                     {/each}
                     {#if wk.layout.singles[i].length > settings.maxPerDay}
-                      <span class="more">+{wk.layout.singles[i].length - settings.maxPerDay} more</span>
+                      <span class="more">{wk.layout.singles[i].length - settings.maxPerDay} more</span>
                     {/if}
                   </span>
                 {:else}
@@ -218,10 +210,6 @@
     line-height: 1;
     color: var(--text-dim);
     padding: 0 10px;
-    border-radius: var(--radius-sm);
-  }
-  .nav:active {
-    background: var(--bg-elev);
   }
   .today-btn {
     font-size: 0.72rem;
@@ -239,18 +227,22 @@
     color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 1px;
-    padding: 0 2px 4px;
+    padding: 0 0 4px;
   }
   .dow span {
     text-align: center;
   }
 
+  /* continuous hairline grid (no card cells, no gaps) */
   .weeks {
     display: flex;
     flex-direction: column;
-    gap: 4px;
     flex: 1 1 auto;
     min-height: 0;
+    border-top: 1px solid var(--surface-line);
+    border-left: 1px solid var(--surface-line);
+    border-radius: 8px;
+    overflow: hidden;
   }
   .week {
     position: relative;
@@ -260,51 +252,46 @@
   .daygrid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
     height: 100%;
   }
   .cell {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding: 4px 5px 3px;
-    border-radius: var(--radius-sm);
+    padding: 3px 3px 2px;
     background: var(--bg-elev);
     color: var(--text);
+    border-right: 1px solid var(--surface-line);
+    border-bottom: 1px solid var(--surface-line);
     overflow: hidden;
     text-align: left;
     cursor: pointer;
   }
-  .cell.past {
-    opacity: 0.5;
+  .cell.sel {
+    background: var(--accent-soft);
   }
   .num {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 0.92rem;
+    font-weight: 500;
     font-variant-numeric: tabular-nums;
-    align-self: flex-start;
-    min-width: 1.6em;
-    height: 1.6em;
+    align-self: center;
+    width: 1.7em;
+    height: 1.7em;
     display: grid;
     place-items: center;
     border-radius: 50%;
-  }
-  .cell.today {
-    opacity: 1;
+    margin-bottom: 1px;
   }
   .cell.today .num {
-    background: var(--today);
-    color: #1a1a1a;
-  }
-  .cell.sel {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
   }
 
-  /* reserve vertical room so per-day singles start below the bar lanes */
+  /* reserve room so single-day pills start below the spanning-bar lanes */
   .spacer {
     flex: 0 0 auto;
-    height: calc(var(--lanes) * 18px);
+    height: calc(var(--lanes) * 21px);
   }
 
   .singles {
@@ -316,76 +303,55 @@
     overflow: hidden;
   }
   .ev {
-    display: flex;
-    align-items: flex-start;
-    gap: 4px;
-    font-size: 0.72rem;
-    line-height: 1.3;
+    display: block;
+    width: 100%;
     text-align: left;
-    padding: 0;
-    color: var(--text);
-  }
-  .ev i {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex: 0 0 auto;
-    margin-top: 0.34em;
-  }
-  .ev b {
-    color: var(--text-dim);
+    font-size: 0.76rem;
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    flex: 0 0 auto;
-  }
-  .ev .evt {
-    /* wrap to two lines on days with room; cell overflow clips busy days */
-    min-width: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
+    line-height: 19px;
+    height: 19px;
+    padding: 0 6px;
+    border-radius: 5px;
     overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
   }
   .more {
-    font-size: 0.66rem;
+    font-size: 0.68rem;
     color: var(--text-faint);
+    padding: 0 4px;
     margin-top: 1px;
   }
 
-  /* spanning multi-day / all-day bars, overlaid above the day cells */
+  /* spanning multi-day / all-day bars — same pill style, continuous across days */
   .bars {
     position: absolute;
-    top: 26px;
+    top: 30px;
     left: 0;
     right: 0;
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    grid-auto-rows: 16px;
+    grid-auto-rows: 19px;
     row-gap: 2px;
-    pointer-events: none;
     z-index: 2;
   }
   .bar {
-    margin: 0 3px;
-    height: 16px;
-    border-radius: 8px;
-    font-size: 0.68rem;
+    height: 19px;
+    line-height: 19px;
+    font-size: 0.76rem;
     font-weight: 600;
-    line-height: 16px;
-    padding: 0 7px;
+    text-align: left;
+    padding: 0 6px;
+    border-radius: 5px;
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    text-overflow: clip;
   }
   .bar.cl {
-    margin-left: 0;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
   }
   .bar.cr {
-    margin-right: 0;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }
@@ -395,6 +361,7 @@
     gap: 3px;
     margin-top: 2px;
     flex-wrap: wrap;
+    justify-content: center;
   }
   .dots i {
     width: 6px;
