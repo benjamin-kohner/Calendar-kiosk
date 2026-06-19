@@ -7,7 +7,7 @@
 :root {
   /* Global type bump for at-a-distance legibility on the wall (all rem sizes
      scale from here). Tune this one number to make everything bigger/smaller. */
-  font-size: 107%;
+  font-size: 118%;
 
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 

@@ -317,11 +317,10 @@
   }
   .ev {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 4px;
     font-size: 0.72rem;
     line-height: 1.3;
-    white-space: nowrap;
     text-align: left;
     padding: 0;
     color: var(--text);
@@ -331,6 +330,7 @@
     height: 6px;
     border-radius: 50%;
     flex: 0 0 auto;
+    margin-top: 0.34em;
   }
   .ev b {
     color: var(--text-dim);
@@ -339,8 +339,13 @@
     flex: 0 0 auto;
   }
   .ev .evt {
+    /* wrap to two lines on days with room; cell overflow clips busy days */
+    min-width: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
   .more {
     font-size: 0.66rem;
