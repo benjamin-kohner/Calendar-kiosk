@@ -1,37 +1,53 @@
 <script lang="ts">
   import type { CalEvent } from '../lib/types';
   import {
-    fmtFullDate,
     fmtTime,
     isToday,
-    sameDay,
+    startOfDay,
+    addDays,
     eventStartDate,
-    eventEndDate
+    eventEndDate,
+    eventsForDay,
+    fmtWeekdayShortDate
   } from '../lib/date';
   import { clock } from '../lib/clock.svelte';
   import { ui } from '../lib/ui.svelte';
 
   let { day, events }: { day: Date; events: CalEvent[] } = $props();
 
-  // For "today", surface the next upcoming timed event (a warm, useful default).
-  const nextUp = $derived.by<CalEvent | null>(() => {
-    if (!isToday(day)) return null;
-    const n = clock.now.getTime();
-    const future = events
-      .filter((e) => !e.allDay && eventStartDate(e).getTime() > n)
-      .sort((a, b) => eventStartDate(a).getTime() - eventStartDate(b).getTime());
-    return future[0] ?? null;
+  const MAX_EVENTS = 40; // upcoming events to render (the panel scrolls)
+  const DAY_SCAN = 90; // look ahead this many days for events
+
+  // Forward-looking agenda from the selected day: that day's events first
+  // (even if empty), then each following day that has events, grouped by day.
+  const groups = $derived.by(() => {
+    void clock.dayKey; // refresh Today/Tomorrow labels on midnight rollover
+    const start = startOfDay(day);
+    const out: { key: string; day: Date; events: CalEvent[] }[] = [];
+    let count = 0;
+    for (let i = 0; i < DAY_SCAN && count < MAX_EVENTS; i++) {
+      const d = addDays(start, i);
+      const evs = eventsForDay(events, d);
+      if (i === 0 || evs.length) {
+        out.push({ key: d.toISOString(), day: d, events: evs });
+        count += evs.length;
+      }
+    }
+    return out;
   });
+
+  function dayLabel(d: Date): string {
+    if (isToday(d)) return 'Today';
+    if (isToday(addDays(d, -1))) return 'Tomorrow';
+    return fmtWeekdayShortDate(d);
+  }
 
   function timeRange(ev: CalEvent): string {
     if (ev.allDay) return 'All day';
-    const s = eventStartDate(ev);
-    const e = eventEndDate(ev);
-    return `${fmtTime(s)} – ${fmtTime(e)}`;
+    return `${fmtTime(eventStartDate(ev))} – ${fmtTime(eventEndDate(ev))}`;
   }
 
-  // First ~120 chars of the description, with HTML stripped and whitespace
-  // collapsed (Google descriptions can contain markup).
+  // First ~120 chars of the description, HTML stripped & whitespace collapsed.
   function descSnippet(ev: CalEvent): string | null {
     if (!ev.description) return null;
     const text = ev.description
@@ -45,42 +61,29 @@
 </script>
 
 <aside class="ribbon">
-  <header>
-    <span class="lbl">{isToday(day) ? 'Today' : ''}</span>
-    <h3>{fmtFullDate(day)}</h3>
-  </header>
-
-  {#if isToday(day)}
-    <div class="upnext" class:free={!nextUp}>
-      {#if nextUp}
-        <span class="k">Next · {fmtTime(eventStartDate(nextUp))}</span>
-        <span class="v">{nextUp.title || '(no title)'}</span>
-      {:else}
-        <span class="k">Nothing else scheduled today</span>
-      {/if}
-    </div>
-  {/if}
-
   <div class="scroll list">
-    {#if events.length === 0}
-      <p class="empty">{isToday(day) ? 'No events today' : 'No events'}</p>
-    {:else}
-      {#each events as ev (ev.id)}
-        <button class="item" onclick={() => ui.openEvent(ev)}>
-          <span class="bar" style="background:{ev.color}"></span>
-          <span class="body">
-            <span class="t">{ev.title || '(no title)'}</span>
-            <span class="time">{timeRange(ev)}</span>
-            {#if ev.location}
-              <span class="loc"><span class="ic">📍</span>{ev.location}</span>
-            {/if}
-            {#if descSnippet(ev)}
-              <span class="desc">{descSnippet(ev)}</span>
-            {/if}
-          </span>
-        </button>
-      {/each}
-    {/if}
+    {#each groups as g (g.key)}
+      <div class="day-label" class:today={isToday(g.day)}>{dayLabel(g.day)}</div>
+      {#if g.events.length === 0}
+        <p class="empty">No events</p>
+      {:else}
+        {#each g.events as ev (ev.id)}
+          <button class="item" onclick={() => ui.openEvent(ev)}>
+            <span class="bar" style="background:{ev.color}"></span>
+            <span class="body">
+              <span class="t">{ev.title || '(no title)'}</span>
+              <span class="time">{timeRange(ev)}</span>
+              {#if ev.location}
+                <span class="loc"><span class="ic">📍</span>{ev.location}</span>
+              {/if}
+              {#if descSnippet(ev)}
+                <span class="desc">{descSnippet(ev)}</span>
+              {/if}
+            </span>
+          </button>
+        {/each}
+      {/if}
+    {/each}
   </div>
 </aside>
 
@@ -90,67 +93,35 @@
     flex-direction: column;
     background: var(--bg-elev);
     border-radius: var(--radius);
-    padding: 14px;
+    padding: 4px 14px 14px;
     min-height: 0;
-  }
-  header {
-    flex: 0 0 auto;
-  }
-  .lbl {
-    font-size: 0.74rem;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 700;
-  }
-  h3 {
-    margin: 2px 0 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
-  .upnext {
-    margin: 10px 0 4px;
-    padding: 8px 10px;
-    background: var(--accent-soft);
-    border-radius: var(--radius-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-  .upnext.free {
-    background: var(--bg-elev-2);
-  }
-  .upnext .k {
-    font-size: 0.7rem;
-    color: var(--accent);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .upnext.free .k {
-    color: var(--text-faint);
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: 500;
-  }
-  .upnext .v {
-    font-size: 0.95rem;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
   .list {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    margin-top: 6px;
+  }
+  .day-label {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg-elev);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-faint);
+    padding: 10px 2px 5px;
+    border-bottom: 1px solid var(--surface-line);
+  }
+  .day-label.today {
+    color: var(--accent);
   }
   .empty {
     color: var(--text-faint);
-    font-size: 0.95rem;
-    margin: 6px 2px;
+    font-size: 0.9rem;
+    margin: 8px 2px 4px;
   }
   .item {
     display: flex;
@@ -183,7 +154,6 @@
     font-size: 1rem;
     font-weight: 600;
     line-height: 1.25;
-    /* full title, wrapping up to two lines before truncating */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;

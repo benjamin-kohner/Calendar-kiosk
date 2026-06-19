@@ -108,6 +108,8 @@ export const fmtWeekday = (d: Date) => f({ weekday: 'short' }).format(d);
 export const fmtWeekdayLong = (d: Date) => f({ weekday: 'long' }).format(d);
 export const fmtDayMonth = (d: Date) => f({ day: 'numeric', month: 'short' }).format(d);
 export const fmtFullDate = (d: Date) => f({ weekday: 'long', month: 'long', day: 'numeric' }).format(d);
+export const fmtWeekdayShortDate = (d: Date) =>
+  f({ weekday: 'short', month: 'short', day: 'numeric' }).format(d);
 
 export function fmtEventTime(ev: CalEvent): string {
   if (ev.allDay) return 'All day';

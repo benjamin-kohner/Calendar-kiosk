@@ -49,7 +49,6 @@
   });
 
   const labels = $derived(weekdayLabels(settings.weekStartsMonday));
-  const selectedEvents = $derived(eventsForDay(events, selected));
 
   interface Week {
     days: Date[];
@@ -181,7 +180,7 @@
     </div>
   </section>
 
-  <DayRibbon day={selected} events={selectedEvents} />
+  <DayRibbon day={selected} events={events} />
 </div>
 
 <style>
