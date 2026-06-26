@@ -138,21 +138,6 @@
         onchange={() => settings.save()}
       /> Show events on the calendar grid
     </label>
-    {#if settings.showEventsInGrid}
-      <div class="sub">
-        <span>Max events per day</span>
-        <div class="seg small">
-          {#each [2, 3, 4] as n (n)}
-            <button
-              class:active={settings.maxPerDay === n}
-              onclick={() => {
-                settings.maxPerDay = n;
-                settings.save();
-              }}>{n}</button>
-          {/each}
-        </div>
-      </div>
-    {/if}
     <h4>Agenda ribbon</h4>
     <div class="seg">
       {#each RIBBON_LAYOUTS as l (l.id)}
@@ -317,22 +302,10 @@
     color: var(--text-dim);
     font-size: 0.85rem;
   }
-  .seg.small button {
-    padding: 6px 12px;
-    flex: 0 0 auto;
-  }
   .seg button.active {
     background: var(--accent-soft);
     color: var(--accent);
     font-weight: 600;
-  }
-  .sub {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 10px 0 2px;
-    font-size: 0.85rem;
-    color: var(--text-dim);
   }
   .cals {
     display: flex;

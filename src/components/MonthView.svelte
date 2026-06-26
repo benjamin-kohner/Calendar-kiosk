@@ -15,7 +15,7 @@
     eventsForDay,
     fmtMonthRange
   } from '../lib/date';
-  import { layoutWeek, type WeekLayout } from '../lib/monthLayout';
+  import { layoutWeek, fitSingles, type WeekLayout } from '../lib/monthLayout';
   import DayRibbon from './DayRibbon.svelte';
 
   let { events }: { events: CalEvent[] } = $props();
@@ -26,6 +26,11 @@
   let offsetWeeks = $state(0);
   let selected = $state(new Date());
   let following = $state(true);
+
+  // Measured available height (px) for the events list in each week row,
+  // used to fit as many events as the cell naturally allows instead of a
+  // hardcoded count. All 7 day cells in a row share the same height.
+  let rowHeights: number[] = $state(Array.from({ length: WEEKS }, () => 0));
 
   function resetToToday() {
     offsetWeeks = 0;
@@ -145,8 +150,9 @@
                 {#if wk.shownLanes > 0}<span class="spacer"></span>{/if}
 
                 {#if wk.layout}
-                  <span class="singles">
-                    {#each wk.layout.singles[i].slice(0, settings.maxPerDay) as ev (ev.id)}
+                  {@const slots = fitSingles(wk.layout.singles[i], rowHeights[wi])}
+                  <span class="singles" bind:clientHeight={rowHeights[wi]}>
+                    {#each slots.shown as ev (ev.id)}
                       <button
                         class="ev"
                         style="background:{ev.color}; color:{textOn(ev.color)}"
@@ -155,8 +161,8 @@
                         {ev.title || '(no title)'}
                       </button>
                     {/each}
-                    {#if wk.layout.singles[i].length > settings.maxPerDay}
-                      <span class="more">{wk.layout.singles[i].length - settings.maxPerDay} more</span>
+                    {#if slots.overflow > 0}
+                      <span class="more">{slots.overflow} more</span>
                     {/if}
                   </span>
                 {:else}

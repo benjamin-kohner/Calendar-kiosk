@@ -20,7 +20,6 @@ interface PersistedSettings {
   useDeviceLocation: boolean;
   weather: WeatherLocation | null; // manual override location
   showEventsInGrid: boolean;
-  maxPerDay: number;
 }
 
 const STORAGE_KEY = 'kiosk.settings.v1';
@@ -39,8 +38,7 @@ const DEFAULTS: PersistedSettings = {
   hiddenCalendars: [],
   useDeviceLocation: true,
   weather: null,
-  showEventsInGrid: true,
-  maxPerDay: 3
+  showEventsInGrid: true
 };
 
 function load(): PersistedSettings {
@@ -67,7 +65,6 @@ class Settings {
   useDeviceLocation = $state(DEFAULTS.useDeviceLocation);
   weather = $state<WeatherLocation | null>(DEFAULTS.weather);
   showEventsInGrid = $state(DEFAULTS.showEventsInGrid);
-  maxPerDay = $state(DEFAULTS.maxPerDay);
 
   constructor() {
     const s = load();
@@ -84,7 +81,6 @@ class Settings {
     this.useDeviceLocation = s.useDeviceLocation;
     this.weather = s.weather;
     this.showEventsInGrid = s.showEventsInGrid;
-    this.maxPerDay = s.maxPerDay;
   }
 
   save() {
@@ -101,8 +97,7 @@ class Settings {
       hiddenCalendars: this.hiddenCalendars,
       useDeviceLocation: this.useDeviceLocation,
       weather: this.weather,
-      showEventsInGrid: this.showEventsInGrid,
-      maxPerDay: this.maxPerDay
+      showEventsInGrid: this.showEventsInGrid
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

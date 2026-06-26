@@ -95,3 +95,31 @@ export function layoutWeek(events: CalEvent[], weekDays: Date[]): WeekLayout {
 
   return { bars, laneCount: laneEnds.length, singles };
 }
+
+// Pixel sizes mirrored from MonthView's .ev / .more / .singles CSS, used to
+// figure out how many single-day events actually fit in a day cell's
+// measured height instead of capping at a fixed count.
+const ITEM_H = 19;
+const ITEM_GAP = 2;
+const MORE_H = 16;
+
+export interface DaySlots {
+  shown: CalEvent[];
+  overflow: number;
+}
+
+/** How many ITEM_H-tall rows (with ITEM_GAP between them) fit in `height`. */
+function rowsThatFit(height: number): number {
+  if (height <= 0) return 0;
+  return Math.max(0, Math.floor((height + ITEM_GAP) / (ITEM_H + ITEM_GAP)));
+}
+
+/** Splits a day's single-events list into what fits in `availableHeight` px,
+ * reserving room for a "+N more" label only when not everything fits. */
+export function fitSingles(events: CalEvent[], availableHeight: number): DaySlots {
+  const full = rowsThatFit(availableHeight);
+  if (events.length <= full) return { shown: events, overflow: 0 };
+
+  const itemCap = rowsThatFit(availableHeight - MORE_H - ITEM_GAP);
+  return { shown: events.slice(0, itemCap), overflow: events.length - itemCap };
+}
